@@ -26,7 +26,7 @@ public class MainApp {
 
         try {
             // Copy the resource to a temp file
-            InputStream jsonStream = MainApp.class.getResourceAsStream("/health.json");
+            InputStream jsonStream = MainApp.class.getResourceAsStream("/test.json");
             if (jsonStream == null) {
                 throw new RuntimeException("Resource not found: health.json");
             }
@@ -39,10 +39,11 @@ public class MainApp {
             }
 
             // Use the temp file path for FirebaseService
-            database = new FirebaseService(tempFile.getAbsolutePath(), "https://healthapp-733e8-default-rtdb.firebaseio.com/");
-            System.out.println("FirebaseService initialized successfully");
-            database.set("test2", "hi");
+            database = new FirebaseService(tempFile.getAbsolutePath(), "https://test-ce488-default-rtdb.firebaseio.com/");
             Thread.sleep(1000);
+            System.out.println("FirebaseService initialized successfully");
+            database.set("test3", "higgg");
+           
         } catch (Exception ex) {
             ex.printStackTrace();
         }
