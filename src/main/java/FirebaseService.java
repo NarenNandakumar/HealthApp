@@ -12,6 +12,8 @@ import com.google.firebase.database.ValueEventListener;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 
 public class FirebaseService {
@@ -30,11 +32,14 @@ public class FirebaseService {
     public void set(String key, String value) {
         ApiFuture<Void> future = dbRef.child(key).setValueAsync(value);
         try {
-            future.get();  // blocks until write completes or fails
-            System.out.println("Write to key '" + key + "' succeeded.");
+            future.get(10, TimeUnit.SECONDS);
+            System.out.println("Write succeeded.");
+        } catch (TimeoutException e) {
+            System.err.println("Write timed out.");
         } catch (Exception e) {
-            System.err.println("Write to key '" + key + "' failed: " + e.getMessage());
+            System.err.println("Write failed: " + e.getMessage());
         }
+        
     }
 
     public CompletableFuture<String> get(String key) {

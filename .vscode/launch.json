@@ -8,6 +8,13 @@
       "type": "java",
       "name": "MainApp",
       "request": "launch",
+      "mainClass": "MainApp",
+      "projectName": "HealthApp"
+    },
+    {
+      "type": "java",
+      "name": "MainApp",
+      "request": "launch",
       "mainClass": "frc.robot.MainApp",
       "projectName": "HealthApp"
     },
