@@ -1,0 +1,121 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'edu.wpi.first.GradleRIO' version '2025.3.1'
+}
+ext {
+    wpilibVersion = '2025.3.2' // or whatever version you’re using
+}
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)  // Update to Java 21
+    }
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+repositories {
+    mavenCentral()
+    maven { url 'https://frcmaven.wpi.edu/artifactory/release' } // For WPILib
+}
+mainClassName = 'MainApp' // <-- use your real package and class
+deploy {
+    targets {
+        roborio(getTargetTypeClass('RoboRIO')) {
+            // Team number is loaded either from the .wpilib/wpilib_preferences.json
+            // or from command line. If not found an exception will be thrown.
+            // You can use getTeamOrDefault(team) instead of getTeamNumber if you
+            // want to store a team number in this file.
+            team = project.frc.getTeamNumber()
+            debug = project.frc.getDebugOrDefault(false)
+
+            artifacts {
+                // First part is artifact name, 2nd is artifact type
+                // getTargetTypeClass is a shortcut to get the class type using a string
+
+                frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
+                }
+
+                // Static files artifact
+                frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
+                    files = project.fileTree('src/main/deploy')
+                    directory = '/home/lvuser/deploy'
+                    deleteOldFiles = false // Change to true to delete files on roboRIO that no
+                                           // longer exist in deploy directory of this project
+                }
+            }
+        }
+    }
+}
+def includeDesktopSupport = true
+def javafxVersion = "21.0.1"
+def osName = System.getProperty("os.name").toLowerCase()
+def platform = osName.contains("win") ? "win" :
+               osName.contains("mac") ? "mac" :
+               osName.contains("nux") ? "linux" : ""
+
+dependencies {
+    // implementation 'edu.wpi.first.wpilibj:wpilibj-api:2024.1.1' // Or the desired version
+    // implementation 'edu.wpi.first.ntcore:ntcore-java:2024.1.1' // Or t
+    implementation "org.openjfx:javafx-base:${javafxVersion}:${platform}"
+    implementation "org.openjfx:javafx-graphics:${javafxVersion}:${platform}"
+    implementation "org.openjfx:javafx-controls:${javafxVersion}:${platform}"
+    implementation "org.openjfx:javafx-fxml:${javafxVersion}:${platform}"
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
+    // WPILib support for NetworkTables or others
+    implementation wpi.java.deps.wpilib()
+    implementation wpi.java.vendor.java() 
+    roborioDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.roborio)
+    roborioDebug wpi.java.vendor.jniDebug(wpi.platforms.roborio)
+
+    roborioRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.roborio)
+    roborioRelease wpi.java.vendor.jniRelease(wpi.platforms.roborio)
+
+    nativeDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.desktop)
+    nativeDebug wpi.java.vendor.jniDebug(wpi.platforms.desktop)
+    simulationDebug wpi.sim.enableDebug()
+
+    nativeRelease wpi.java.deps.wpilibJniRelease(wpi.platforms.desktop)
+    nativeRelease wpi.java.vendor.jniRelease(wpi.platforms.desktop)
+    simulationRelease wpi.sim.enableRelease()
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    annotationProcessor wpi.java.deps.wpilibAnnotations()  
+    
+    // nativeImplementation wpi.deps.wpilibJni()
+    // implementation wpi.java.deps.networktables()
+    // implementation wpi.java.deps.ntcoreJNI()
+    // implementation wpi.java.deps.wpiutilJNI()
+    
+    
+}
+wpi.sim.addGui().defaultEnabled = true
+wpi.sim.addDriverstation()
+application {
+    mainClass = mainClassName
+}
+run {
+    // Ensure the native DLLs that GradleRIO unpacks into build/jni/release
+    // are on the java.library.path at runtime
+    jvmArgs += ["-Djava.library.path=${buildDir}/jni/release"]
+    jvmArgs += [
+        "--module-path", configurations.runtimeClasspath.asPath,
+        "--add-modules", "javafx.base,javafx.graphics,javafx.controls,javafx.fxml"
+    ]
+}
+tasks.register('prepareJni') {
+    doFirst {
+        def jniDir = file("$buildDir/jni/release")
+        if (!jniDir.exists()) {
+            jniDir.mkdirs()
+        }
+    }
+}
+
+run.dependsOn 'prepareJni'
+run.dependsOn 'extractReleaseNative'
+
+
+// Run JavaFX directly from gradle
